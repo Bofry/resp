@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"strconv"
 
 	"github.com/FastHCA/resp/value"
@@ -19,43 +18,41 @@ func (v _IntegerReader) NotationByte() byte {
 }
 
 // Read implements DataReader.
-func (_IntegerReader) Read(reader io.Reader) (int, value.Value, error) {
-	r := acquireBufioReader(reader)
-
+func (_IntegerReader) Read(r ByteReader) (int, value.Value, error) {
 	var (
 		buf      bytes.Buffer
 		offset   int
 		kontinue = true
 	)
+
 	for kontinue {
 		b, err := r.ReadByte()
+
 		if err != nil {
 			return buf.Len(), nil, err
 		}
+		offset++
 
 		switch b {
 		case _CR:
-			offset = buf.Len()
-
 			b, err = r.ReadByte()
-			offset++
-
 			if err != nil {
 				return offset, nil, err
 			}
+			offset++
+
 			if b != _LF {
-				return offset, nil, fmt.Errorf("read invalid terminator '%c' at %d", b, offset)
+				return offset, nil, fmt.Errorf("read invalid terminator %q at %d", b, offset)
 			}
 			kontinue = false
 			break
 		default:
-			if !(b == '+' || b == '-' || b >= '0' || b <= '9') {
-				return buf.Len(), nil, fmt.Errorf("read invalid character '%c' at %d", b, offset)
+			if !(b == '+' || b == '-' || (b >= '0' && b <= '9')) {
+				return offset, nil, fmt.Errorf("read invalid character %q at %d", b, offset)
 			}
 			buf.WriteByte(b)
 		}
 	}
-	offset = buf.Len() + len(_TERMINATOR)
 
 	var res value.Value
 	{

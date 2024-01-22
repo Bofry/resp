@@ -8,8 +8,8 @@ import (
 	"github.com/FastHCA/resp/value"
 )
 
-//go:linkname Read github.com/FastHCA/resp/internal.Read
-func Read(reader io.Reader) (int, value.Value, error)
+//go:linkname Resolve github.com/FastHCA/resp/internal.Resolve
+func Resolve(reader io.Reader) (int, value.Value, error)
 
 func Marshal(data Data) ([]byte, error) {
 	var buf = new(bytes.Buffer)

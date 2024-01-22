@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"io"
 
 	"github.com/FastHCA/resp/value"
 )
@@ -18,8 +17,7 @@ func (p _SimpleStringReader) NotationByte() byte {
 }
 
 // Read implements DataReader.
-func (_SimpleStringReader) Read(reader io.Reader) (int, value.Value, error) {
-	r := acquireBufioReader(reader)
+func (_SimpleStringReader) Read(r ByteReader) (int, value.Value, error) {
 
 	var (
 		buf      bytes.Buffer
@@ -35,20 +33,21 @@ func (_SimpleStringReader) Read(reader io.Reader) (int, value.Value, error) {
 		switch b {
 		case _CR:
 			offset = buf.Len()
-
-			b, err = r.ReadByte()
 			offset++
 
+			b, err = r.ReadByte()
 			if err != nil {
 				return offset, nil, err
 			}
+			offset++
+
 			if b != _LF {
-				return offset, nil, fmt.Errorf("read invalid terminator '%c' at %d", b, offset)
+				return offset, nil, fmt.Errorf("read invalid terminator %q at %d", b, offset)
 			}
 			kontinue = false
 			break
 		case _LF:
-			return buf.Len(), nil, fmt.Errorf("read invalid character '%c' at %d", b, offset)
+			return buf.Len() + 1, nil, fmt.Errorf("read invalid character %q at %d", b, offset)
 		default:
 			buf.WriteByte(b)
 		}

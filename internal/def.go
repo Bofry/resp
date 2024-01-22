@@ -56,9 +56,18 @@ const (
 )
 
 type (
+	ByteReader interface {
+		Len() int
+		Size() int64
+
+		io.Reader
+		io.ByteReader
+		io.Seeker
+	}
+
 	DataReader interface {
 		NotationByte() byte
-		Read(reader io.Reader) (int, value.Value, error)
+		Read(reader ByteReader) (int, value.Value, error)
 	}
 
 	ValuePacker interface {

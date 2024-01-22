@@ -1,19 +1,16 @@
 package internal
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 
 	"github.com/FastHCA/resp/value"
 )
 
-func Read(reader io.Reader) (int, value.Value, error) {
-	r := acquireBufioReader(reader)
-	return read(r)
+func Resolve(reader ByteReader) (int, value.Value, error) {
+	return resolve(reader)
 }
 
-func read(reader *bufio.Reader) (int, value.Value, error) {
+func resolve(reader ByteReader) (int, value.Value, error) {
 	var (
 		offset int = 0
 	)

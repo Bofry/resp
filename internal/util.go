@@ -6,14 +6,6 @@ import (
 	"io"
 )
 
-func acquireBufioReader(reader io.Reader) *bufio.Reader {
-	r, ok := reader.(*bufio.Reader)
-	if !ok {
-		r = bufio.NewReader(reader)
-	}
-	return r
-}
-
 func acquireBufioWriter(writer io.Writer) *bufio.Writer {
 	w, ok := writer.(*bufio.Writer)
 	if !ok {

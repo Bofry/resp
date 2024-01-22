@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"strconv"
 
 	"github.com/FastHCA/resp/value"
@@ -19,9 +18,7 @@ func (p _ArrayReader) NotationByte() byte {
 }
 
 // Read implements DataReader.
-func (_ArrayReader) Read(reader io.Reader) (int, value.Value, error) {
-	r := acquireBufioReader(reader)
-
+func (_ArrayReader) Read(r ByteReader) (int, value.Value, error) {
 	var (
 		size   int64
 		offset int
@@ -42,21 +39,22 @@ func (_ArrayReader) Read(reader io.Reader) (int, value.Value, error) {
 			switch b {
 			case _CR:
 				offset = buf.Len()
-
-				b, err = r.ReadByte()
 				offset++
 
+				b, err = r.ReadByte()
 				if err != nil {
 					return offset, nil, err
 				}
+				offset++
+
 				if b != _LF {
-					return offset, nil, fmt.Errorf("read invalid terminator '%c' at %d", b, offset)
+					return offset, nil, fmt.Errorf("read invalid terminator %q at %d", b, offset)
 				}
 				kontinue = false
 				break
 			default:
-				if !(b == '-' || b >= '0' || b <= '9') {
-					return buf.Len(), nil, fmt.Errorf("read invalid character '%c' at %d", b, offset)
+				if !(b == '-' || (b >= '0' && b <= '9')) {
+					return buf.Len() + 1, nil, fmt.Errorf("read invalid character %q at %d", b, offset)
 				}
 				buf.WriteByte(b)
 			}
@@ -64,12 +62,12 @@ func (_ArrayReader) Read(reader io.Reader) (int, value.Value, error) {
 		offset = buf.Len() + len(_TERMINATOR)
 
 		content := buf.String()
-		i, err := strconv.ParseInt(content, 10, 64)
+		n, err := strconv.ParseInt(content, 10, 64)
 		if err != nil {
 			return offset, value.NullArray(), err
 		}
 		// export
-		size = i
+		size = n
 	}
 
 	if size < 0 {
@@ -86,7 +84,7 @@ func (_ArrayReader) Read(reader io.Reader) (int, value.Value, error) {
 		content = make([]value.Value, 0, size)
 
 		for i := 0; i < int(size); i++ {
-			n, elem, err := read(r)
+			n, elem, err := resolve(r)
 			offset += n
 
 			if err != nil {
