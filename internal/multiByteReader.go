@@ -6,39 +6,38 @@ import (
 )
 
 var (
-	_ ByteReader = new(MultByteReader)
+	_ ByteReader          = new(MultiByteReader)
+	_ CompositeByteReader = new(MultiByteReader)
 )
 
-type MultByteReader struct {
-	readers   []ByteReader
-	pos       int64
-	container *ReaderContainer
+type MultiByteReader struct {
+	pos     int64
+	manager *ReaderManager
 }
 
-func NewMultByteReader(readers ...ByteReader) *MultByteReader {
+func NewMultByteReader(readers ...ByteReader) *MultiByteReader {
 
-	container := NewReaderManager(readers...)
+	manager := NewReaderManager(readers...)
 
-	return &MultByteReader{
-		readers:   readers,
-		container: container,
-		pos:       0,
+	return &MultiByteReader{
+		manager: manager,
+		pos:     0,
 	}
 }
 
 // Len implements ByteReader.
-func (r *MultByteReader) Len() int {
+func (r *MultiByteReader) Len() int {
 	var size int = 0
 
-	for _, rd := range r.readers {
+	for _, rd := range r.readers() {
 		size += rd.Len()
 	}
 	return size
 }
 
 // Read implements ByteReader.
-func (r *MultByteReader) Read(p []byte) (n int, err error) {
-	var reader = r.container.current()
+func (r *MultiByteReader) Read(p []byte) (n int, err error) {
+	var reader = r.manager.current()
 	if reader == nil {
 		return 0, io.EOF
 	}
@@ -47,8 +46,8 @@ func (r *MultByteReader) Read(p []byte) (n int, err error) {
 	for reader != nil {
 		n, err := reader.Read(p[count:])
 		if err == io.EOF {
-			r.container.next()
-			reader = r.container.current()
+			r.manager.next()
+			reader = r.manager.current()
 			continue
 		}
 		if err != nil {
@@ -59,26 +58,29 @@ func (r *MultByteReader) Read(p []byte) (n int, err error) {
 		if len(p) <= count {
 			break
 		}
-		r.container.next()
-		reader = r.container.current()
+		r.manager.next()
+		reader = r.manager.current()
 	}
+	r.pos += int64(count)
+
 	return count, nil
 }
 
 // ReadByte implements ByteReader.
-func (r *MultByteReader) ReadByte() (byte, error) {
-	var reader = r.container.current()
+func (r *MultiByteReader) ReadByte() (byte, error) {
+	var reader = r.manager.current()
 	for reader != nil {
 		b, err := reader.ReadByte()
 		if err == io.EOF {
-			r.container.next()
-			reader = r.container.current()
+			r.manager.next()
+			reader = r.manager.current()
 			continue
 		}
 		if err != nil {
 			return b, err
 		}
 
+		r.pos++
 		return b, nil
 	}
 
@@ -86,7 +88,7 @@ func (r *MultByteReader) ReadByte() (byte, error) {
 }
 
 // Seek implements ByteReader.
-func (r *MultByteReader) Seek(offset int64, whence int) (int64, error) {
+func (r *MultiByteReader) Seek(offset int64, whence int) (int64, error) {
 	var pos int64
 
 	switch whence {
@@ -104,8 +106,8 @@ func (r *MultByteReader) Seek(offset int64, whence int) (int64, error) {
 	}
 	r.pos = pos
 
-	r.container.reset()
-	err := r.container.skip(pos)
+	r.manager.reset()
+	err := r.manager.skip(pos)
 	if err != nil {
 		return 0, err
 	}
@@ -113,11 +115,27 @@ func (r *MultByteReader) Seek(offset int64, whence int) (int64, error) {
 }
 
 // Size implements ByteReader.
-func (r *MultByteReader) Size() int64 {
+func (r *MultiByteReader) Size() int64 {
 	var size int64 = 0
 
-	for _, rd := range r.readers {
+	for _, rd := range r.readers() {
 		size += rd.Size()
 	}
 	return size
+}
+
+// Append implements CompositeByteReader.
+func (r *MultiByteReader) Append(readers ...ByteReader) error {
+	r.manager.append(readers...)
+	return nil
+}
+
+// Forget implements CompositeByteReader.
+func (r *MultiByteReader) Forget() error {
+	r.manager.forget()
+	return nil
+}
+
+func (r *MultiByteReader) readers() []ByteReader {
+	return r.manager.readers
 }

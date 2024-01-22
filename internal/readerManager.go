@@ -4,44 +4,44 @@ import (
 	"io"
 )
 
-type ReaderContainer struct {
+type ReaderManager struct {
 	readers []ByteReader
 	index   int
 }
 
-func NewReaderManager(readers ...ByteReader) *ReaderContainer {
-	return &ReaderContainer{
+func NewReaderManager(readers ...ByteReader) *ReaderManager {
+	return &ReaderManager{
 		readers: readers,
 		index:   0,
 	}
 }
 
-func (c *ReaderContainer) current() ByteReader {
-	if len(c.readers) > c.index {
-		return c.readers[c.index]
+func (m *ReaderManager) current() ByteReader {
+	if len(m.readers) > m.index {
+		return m.readers[m.index]
 	}
 	return nil
 }
 
-func (c *ReaderContainer) next() {
-	if len(c.readers) > c.index {
-		c.index++
+func (m *ReaderManager) next() {
+	if len(m.readers) > m.index {
+		m.index++
 	}
 }
 
-func (c *ReaderContainer) skip(n int64) error {
+func (m *ReaderManager) skip(n int64) error {
 	var (
 		skipped int64 = 0
-		offset        = int64(c.index) + n
+		offset        = int64(m.index) + n
 	)
 
-	for _, r := range c.readers {
+	for _, r := range m.readers {
 		size := int64(r.Size())
 
 		if (offset - skipped) < size {
 			pos := offset - skipped
 
-			rd := c.readers[c.index]
+			rd := m.readers[m.index]
 			_, err := rd.Seek(pos, io.SeekStart)
 			if err != nil {
 				return err
@@ -49,11 +49,11 @@ func (c *ReaderContainer) skip(n int64) error {
 			break
 		}
 		skipped += size
-		c.index++
+		m.index++
 	}
 
-	for i := c.index + 1; i < len(c.readers); i++ {
-		rd := c.readers[i]
+	for i := m.index + 1; i < len(m.readers); i++ {
+		rd := m.readers[i]
 		offset, err := rd.Seek(0, io.SeekCurrent)
 		if err != nil {
 			return err
@@ -70,6 +70,17 @@ func (c *ReaderContainer) skip(n int64) error {
 	return nil
 }
 
-func (c *ReaderContainer) reset() {
-	c.index = 0
+func (m *ReaderManager) reset() {
+	m.index = 0
+}
+
+func (m *ReaderManager) forget() {
+	if m.index > 0 {
+		m.readers = m.readers[m.index:]
+		m.index = 0
+	}
+}
+
+func (m *ReaderManager) append(readers ...ByteReader) {
+	m.readers = append(m.readers, readers...)
 }

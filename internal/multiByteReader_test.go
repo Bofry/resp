@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestMultByteReader_Len(t *testing.T) {
+func TestMultiByteReader_Len(t *testing.T) {
 	{
 		r := NewMultByteReader()
 
@@ -41,7 +41,7 @@ func TestMultByteReader_Len(t *testing.T) {
 	}
 }
 
-func TestMultByteReader_Size(t *testing.T) {
+func TestMultiByteReader_Size(t *testing.T) {
 	{
 		r := NewMultByteReader()
 
@@ -75,7 +75,7 @@ func TestMultByteReader_Size(t *testing.T) {
 	}
 }
 
-func TestMultByteReader_ReadByte(t *testing.T) {
+func TestMultiByteReader_ReadByte(t *testing.T) {
 	{
 		r := NewMultByteReader()
 
@@ -218,7 +218,7 @@ func TestMultByteReader_ReadByte(t *testing.T) {
 	}
 }
 
-func TestMultByteReader_Read(t *testing.T) {
+func TestMultiByteReader_Read(t *testing.T) {
 	r1 := bytes.NewReader([]byte("foo"))
 	r2 := bytes.NewReader([]byte(""))
 	r3 := bytes.NewReader([]byte("barbaz"))
@@ -241,7 +241,7 @@ func TestMultByteReader_Read(t *testing.T) {
 	}
 }
 
-func TestMultByteReader_Read_WithNested(t *testing.T) {
+func TestMultiByteReader_Read_WithNested(t *testing.T) {
 	r1 := bytes.NewReader([]byte("foo"))
 	r2 := NewMultByteReader(
 		bytes.NewReader([]byte("")),
@@ -267,7 +267,7 @@ func TestMultByteReader_Read_WithNested(t *testing.T) {
 	}
 }
 
-func TestMultByteReader_Seek(t *testing.T) {
+func TestMultiByteReader_Seek(t *testing.T) {
 	r1 := bytes.NewReader([]byte("foo"))
 	r2 := bytes.NewReader([]byte(""))
 	r3 := bytes.NewReader([]byte("barbaz"))
@@ -299,7 +299,7 @@ func TestMultByteReader_Seek(t *testing.T) {
 	}
 }
 
-func TestMultByteReader_Seek_And_Read(t *testing.T) {
+func TestMultiByteReader_Seek_And_Read(t *testing.T) {
 	r1 := bytes.NewReader([]byte("foo"))
 	r2 := bytes.NewReader([]byte(""))
 	r3 := bytes.NewReader([]byte("barbaz"))

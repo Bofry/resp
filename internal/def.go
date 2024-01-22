@@ -65,6 +65,13 @@ type (
 		io.Seeker
 	}
 
+	CompositeByteReader interface {
+		Append(readers ...ByteReader) error
+		Forget() error
+
+		ByteReader
+	}
+
 	DataReader interface {
 		NotationByte() byte
 		Read(reader ByteReader) (int, value.Value, error)
