@@ -15,7 +15,7 @@ type MultiByteReader struct {
 	manager *ReaderManager
 }
 
-func NewMultByteReader(readers ...ByteReader) *MultiByteReader {
+func NewMultiByteReader(readers ...ByteReader) *MultiByteReader {
 
 	manager := NewReaderManager(readers...)
 
@@ -99,10 +99,10 @@ func (r *MultiByteReader) Seek(offset int64, whence int) (int64, error) {
 	case io.SeekEnd:
 		pos = r.Size() + offset
 	default:
-		return 0, errors.New("resp.MultByteReader.Seek: invalid whence")
+		return 0, errors.New("resp.MultiByteReader.Seek: invalid whence")
 	}
 	if pos < 0 {
-		return 0, errors.New("resp.MultByteReader.Seek: negative position")
+		return 0, errors.New("resp.MultiByteReader.Seek: negative position")
 	}
 	r.pos = pos
 

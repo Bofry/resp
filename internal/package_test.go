@@ -13,7 +13,7 @@ func Test_IntegerReader(t *testing.T) {
 
 	{
 		buf := []byte(":1324\r")
-		reader = NewMultByteReader(
+		reader = NewMultiByteReader(
 			bytes.NewReader(buf),
 		)
 	}
